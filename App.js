@@ -10,6 +10,7 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  Alert,
 } from 'react-native'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
@@ -58,6 +59,22 @@ export default function App() {
     await loadTodos()
   }, [])
 
+  const deleteTodo = (key) => {
+    console.log(key)
+    Alert.alert('Delete Todo', 'Are you sure?', [
+      { text: 'Cancel' },
+      {
+        text: 'Delete',
+        onPress: async () => {
+          const allTodos = { ...todos }
+          delete allTodos[key]
+          setTodos(allTodos)
+          await saveTodos(allTodos)
+        },
+      },
+    ])
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -97,7 +114,9 @@ export default function App() {
             <View style={styles.todoHolder} key={key}>
               <Text style={styles.todoText}>{todos[key].text}</Text>
               <TouchableOpacity activeOpacity="0.5">
-                <Text style={styles.todoText}>Delete</Text>
+                <Text onPress={() => deleteTodo(key)} style={styles.todoText}>
+                  Delete
+                </Text>
               </TouchableOpacity>
             </View>
           ) : null
