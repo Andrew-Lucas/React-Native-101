@@ -15,14 +15,16 @@ import {
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 const icons = {
-  Clouds: 'cloudy',
-  Clear: 'day-sunny',
-  Rain: 'rain',
+  "Clouds": 'cloudy',
+  "Cloudy": 'cloudy',
+  "Partly cloudy": 'cloudy',
+  "Clear": 'day-sunny',
+  "Rain": 'rain',
   'Patchy rain possible': 'day-rain',
-  Fog: 'fog',
-  Sunny: 'day-sunny',
-  Overcast: 'day-cloudy',
-  Snow: 'snowflake-1',
+  "Fog": 'fog',
+  "Sunny": 'day-sunny',
+  "Overcast": 'day-cloudy',
+  "Snow": 'snowflake-1',
 }
 
 export default function App() {
