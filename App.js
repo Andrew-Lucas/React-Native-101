@@ -1,163 +1,159 @@
-import * as Location from 'expo-location'
 import { StatusBar } from 'expo-status-bar'
-import { useEffect, useState } from 'react'
-import { Fontisto } from '@expo/vector-icons'
+import { useEffect, useRef, useState } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+/* import { Fontisto } from '@expo/vector-icons' */
 import {
   StyleSheet,
   Dimensions,
   Text,
   View,
-  Vibration,
   ScrollView,
-  ActivityIndicator,
+  TouchableOpacity,
+  TextInput,
 } from 'react-native'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
-const icons = {
-  "Clouds": 'cloudy',
-  "Cloudy": 'cloudy',
-  "Partly cloudy": 'cloudy',
-  "Clear": 'day-sunny',
-  "Rain": 'rain',
-  'Patchy rain possible': 'day-rain',
-  "Fog": 'fog',
-  "Sunny": 'day-sunny',
-  "Overcast": 'day-cloudy',
-  "Snow": 'snowflake-1',
-}
-
 export default function App() {
-  const [city, setCity] = useState('Loading...')
-  const [allowed, setAllowed] = useState(true)
-  const [days, setDays] = useState([])
-
-  const API_KEY = '144953d338544bcb88d91418231002'
-  /*  */
-  const permission = async () => {
-    const { granted } = await Location.requestForegroundPermissionsAsync()
-    if (!granted) {
-      setAllowed(false)
-    }
-    const {
-      coords: { latitude, longitude },
-    } = await Location.getCurrentPositionAsync({ accuracy: 5 })
-    console.log(latitude, longitude)
-    const location = await Location.reverseGeocodeAsync(
-      { latitude, longitude },
-      { useGoogleMaps: false }
-    )
-
-    const response = await fetch(
-      `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${latitude},${longitude}&days=7`
-    )
-    const responseJson = await response.json()
-    setDays(responseJson.forecast.forecastday)
-    const { city: fetchedCity } = location[0]
-    setCity(fetchedCity)
+  const [working, setWorking] = useState(true)
+  const [text, setText] = useState('')
+  function work() {
+    setWorking(true)
+    setText('')
+  }
+  function travel() {
+    setWorking(false)
+    setText('')
+  }
+  const activeTab = (arg1, arg2) => {
+    return working ? arg1 : arg2
+  }
+  const onChangeText = (event) => {
+    setText(event)
   }
 
-  useEffect(() => {
-    permission()
+  const [todos, setTodos] = useState({})
+  const submitTodo = async () => {
+    if (text === '') {
+      return
+    }
+    const newTodos = Object.assign({}, todos, {
+      [Date.now()]: { text, work: working },
+    })
+    setTodos(newTodos)
+    await saveTodos(newTodos)
+    setText('')
+  }
+  console.log(todos)
+  const saveTodos = async (toSave) => {
+    await AsyncStorage.setItem('todos', JSON.stringify(toSave))
+  }
+  let loadedTodos
+  async function loadTodos() {
+    const savedTodos = await AsyncStorage.getItem('todos')
+    loadedTodos = JSON.parse(savedTodos)
+    setTodos(loadedTodos)
+  }
+  useEffect(async () => {
+    await loadTodos()
   }, [])
-  return (
-    <>
-      {allowed ? (
-        <View style={styles.main}>
-          <View style={styles.topContainer}>
-            <Text style={styles.city}>{city}</Text>
-          </View>
 
-          <ScrollView
-            pagingEnabled
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.bottomContainer}>
-            {days.length === 0 ? (
-              <View style={styles.weatherContainer}>
-                <ActivityIndicator size="large" color="white" />
-              </View>
-            ) : (
-              days.map((day, index) => (
-                <View key={index} style={styles.weatherContainer}>
-                  <Text style={styles.date}>{day.date}</Text>
-                  <View style={styles.tempIconHolder}>
-                    <Text style={styles.temperature}>
-                      {day.day.avgtemp_c}&deg;c
-                    </Text>
-                    <Fontisto
-                      name={icons[day.day.condition.text]}
-                      size={65}
-                      color="black"
-                    />
-                  </View>
-                  <Text style={styles.condition}>{day.day.condition.text}</Text>
-                </View>
-              ))
-            )}
-          </ScrollView>
-        </View>
-      ) : (
-        <View style={styles.notAllowedHolder}>
-          <Text style={styles.notAllowedTxt}>
-            Sorry We could not access the weather
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={work}>
+          <Text
+            style={{
+              ...styles.tabsText,
+              color: activeTab('white', 'gray'),
+              textDecorationLine: activeTab('underline', 'none'),
+            }}>
+            Work
           </Text>
-        </View>
-      )}
-    </>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={travel}>
+          <Text
+            style={{
+              ...styles.tabsText,
+              color: activeTab('gray', 'white'),
+              textDecorationLine: activeTab('none', 'underline'),
+            }}>
+            Travel
+          </Text>
+        </TouchableOpacity>
+      </View>
+      <TextInput
+        returnKeyType="done"
+        onSubmitEditing={submitTodo}
+        value={text}
+        onChangeText={onChangeText}
+        style={styles.textInput}
+        placeholder={
+          working ? 'Write your work list' : 'Write your travel list'
+        }></TextInput>
+      <ScrollView contentContainerStyle={styles.scrollView}>
+        {Object.keys(todos).map((key) =>
+          todos[key].work === working ? (
+            <View style={styles.todoHolder} key={key}>
+              <Text style={styles.todoText}>{todos[key].text}</Text>
+              <TouchableOpacity activeOpacity="0.5">
+                <Text style={styles.todoText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null
+        )}
+      </ScrollView>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  main: {
+  container: {
     flex: 1,
-    backgroundColor: 'royalblue',
-  },
-  topContainer: {
-    flex: 1,
-    justifyContent: 'center',
+    backgroundColor: 'black',
     alignItems: 'center',
   },
-  city: {
-    fontSize: 50,
+  header: {
+    flexDirection: 'row',
+    paddingHorizontal: 30,
+    paddingTop: 100,
+    width: SCREEN_WIDTH,
+    justifyContent: 'space-between',
+  },
+  tabsText: {
+    color: 'white',
+    fontSize: 30,
     fontWeight: '500',
   },
-  bottomContainer: {},
-  weatherContainer: {
-    flex: 1,
+  textInput: {
+    maxHeight: 100,
+    width: '95%',
+    backgroundColor: 'white',
+    borderRadius: 25,
+    marginTop: 15,
+    marginBottom: 10,
+    paddingTop: 10,
+    paddingBottom: 10,
+    paddingHorizontal: 15,
+    fontSize: 17,
+  },
+  scrollView: {
     alignItems: 'center',
     width: SCREEN_WIDTH,
+    paddingHorizontal: 15,
+    gap: 50,
   },
-  date: {
-    fontSize: 25,
-    fontWeight: '500',
-  },
-  tempIconHolder: {
+  todoHolder: {
+    width: '100%',
     flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#202020',
+    paddingVertical: 17,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    marginTop: 10,
   },
-  temperature: {
-    fontSize: 100,
-    fontWeight: '600',
-    marginRight: '7%',
-  },
-  condition: {
-    marginTop: -15,
-    marginLeft: -15,
-    fontWeight: '400',
-    fontSize: 40,
-    width: '80%',
-    textAlign: 'center',
-  },
-  notAllowedHolder: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'royalblue',
-  },
-  notAllowedTxt: {
-    fontSize: 50,
-    width: '85%',
-    textAlign: 'center',
+  todoText: {
+    color: 'white',
   },
 })
