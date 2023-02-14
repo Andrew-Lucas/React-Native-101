@@ -2,22 +2,16 @@ import { StatusBar } from 'expo-status-bar'
 import { useEffect, useRef, useState } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 /* import { Fontisto } from '@expo/vector-icons' */
-import {
-  StyleSheet,
-  Dimensions,
-  Text,
-  View,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Alert,
-} from 'react-native'
+import { StyleSheet, Dimensions, View, TextInput } from 'react-native'
+import Header from './components/Header'
+import Todos from './components/Todos'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 export default function App() {
   const [working, setWorking] = useState(true)
   const [text, setText] = useState('')
+
   function work() {
     setWorking(true)
     setText('')
@@ -29,76 +23,46 @@ export default function App() {
   const activeTab = (arg1, arg2) => {
     return working ? arg1 : arg2
   }
+
   const onChangeText = (event) => {
     setText(event)
   }
-
   const [todos, setTodos] = useState({})
   const submitTodo = async () => {
     if (text === '') {
       return
     }
     const newTodos = Object.assign({}, todos, {
-      [Date.now()]: { text, work: working },
+      [Date.now()]: { text, work: working, done: false },
     })
     setTodos(newTodos)
     await saveTodos(newTodos)
     setText('')
   }
-  console.log(todos)
-  const saveTodos = async (toSave) => {
-    await AsyncStorage.setItem('todos', JSON.stringify(toSave))
-  }
+
   let loadedTodos
   async function loadTodos() {
     const savedTodos = await AsyncStorage.getItem('todos')
     loadedTodos = JSON.parse(savedTodos)
     setTodos(loadedTodos)
   }
-  useEffect(async () => {
-    await loadTodos()
-  }, [])
 
-  const deleteTodo = (key) => {
-    console.log(key)
-    Alert.alert('Delete Todo', 'Are you sure?', [
-      { text: 'Cancel' },
-      {
-        text: 'Delete',
-        onPress: async () => {
-          const allTodos = { ...todos }
-          delete allTodos[key]
-          setTodos(allTodos)
-          await saveTodos(allTodos)
-        },
-      },
-    ])
+  const saveTodos = async (toSave) => {
+    await AsyncStorage.setItem('todos', JSON.stringify(toSave))
   }
+
+  useEffect(() => {
+    loadTodos()
+  }, [todos])
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={work}>
-          <Text
-            style={{
-              ...styles.tabsText,
-              color: activeTab('white', 'gray'),
-              textDecorationLine: activeTab('underline', 'none'),
-            }}>
-            Work
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={travel}>
-          <Text
-            style={{
-              ...styles.tabsText,
-              color: activeTab('gray', 'white'),
-              textDecorationLine: activeTab('none', 'underline'),
-            }}>
-            Travel
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <Header
+        styles={styles}
+        work={work}
+        activeTab={activeTab}
+        travel={travel}
+      />
       <TextInput
         returnKeyType="done"
         onSubmitEditing={submitTodo}
@@ -108,20 +72,13 @@ export default function App() {
         placeholder={
           working ? 'Write your work list' : 'Write your travel list'
         }></TextInput>
-      <ScrollView contentContainerStyle={styles.scrollView}>
-        {Object.keys(todos).map((key) =>
-          todos[key].work === working ? (
-            <View style={styles.todoHolder} key={key}>
-              <Text style={styles.todoText}>{todos[key].text}</Text>
-              <TouchableOpacity activeOpacity="0.5">
-                <Text onPress={() => deleteTodo(key)} style={styles.todoText}>
-                  Delete
-                </Text>
-              </TouchableOpacity>
-            </View>
-          ) : null
-        )}
-      </ScrollView>
+      <Todos
+        styles={styles}
+        todos={todos}
+        setTodos={setTodos}
+        working={working}
+        saveTodos={saveTodos}
+      />
     </View>
   )
 }
@@ -145,14 +102,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   textInput: {
-    maxHeight: 100,
     width: '95%',
     backgroundColor: 'white',
     borderRadius: 25,
-    marginTop: 15,
-    marginBottom: 10,
-    paddingTop: 10,
-    paddingBottom: 10,
+    marginVertical: 15,
+    paddingVertical: 10,
     paddingHorizontal: 15,
     fontSize: 17,
   },
@@ -166,13 +120,14 @@ const styles = StyleSheet.create({
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#202020',
     paddingVertical: 17,
     paddingHorizontal: 10,
     borderRadius: 10,
     marginTop: 10,
   },
-  todoText: {
-    color: 'white',
+  checkbox: {
+    height: 20,
+    width: 20,
+    borderRadius: 5,
   },
 })
