@@ -43,8 +43,10 @@ export default function App() {
   let loadedTodos
   async function loadTodos() {
     const savedTodos = await AsyncStorage.getItem('todos')
-    loadedTodos = JSON.parse(savedTodos)
-    setTodos(loadedTodos)
+    if (savedTodos) {
+      loadedTodos = JSON.parse(savedTodos)
+      setTodos(loadedTodos)
+    }
   }
 
   const saveTodos = async (toSave) => {
