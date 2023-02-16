@@ -35,7 +35,6 @@ export default function App() {
     const newTodos = Object.assign({}, todos, {
       [Date.now()]: { text, work: working, done: false },
     })
-    setTodos(newTodos)
     saveTodos(newTodos)
     setText('')
   }
