@@ -16,6 +16,13 @@ function Todos({ styles, todos, setTodos, saveTodos, working }) {
   }
   async function editTodo(key) {
     if (Platform.OS === 'web') {
+      const ok = confirm("Are you sure you want to edit?", "lalo")
+      if(ok){
+        const allTodos = { ...todos }
+        const ans = prompt("Edit", `${allTodos[key].text}`)
+        allTodos[key].text = ans
+        await saveTodos(allTodos)
+      }
     } else {
       Alert.alert('Edit Todo', 'Are you sure you want to edit?', [
         { text: 'Cancel', style: 'cancel' },
@@ -48,14 +55,16 @@ function Todos({ styles, todos, setTodos, saveTodos, working }) {
     }
   }
 
-  const deleteTodo = (key) => {
+  const deleteTodo = async (key) => {
     if (Platform.OS === 'web') {
       const ok = confirm('Do you want to delete this todo?')
+      console.log("lalo")
       if (ok) {
+        console.log("lola")
         const allTodos = { ...todos }
         delete allTodos[key]
-        setTodos(allTodos)
-        saveTodos(allTodos)
+        console.log(allTodos)
+        await saveTodos(allTodos)
       }
     } else {
       Alert.alert('Delete Todo', 'Are you sure?', [

@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 /* import { Fontisto } from '@expo/vector-icons' */
 import { StyleSheet, Dimensions, View, TextInput } from 'react-native'
@@ -28,7 +28,7 @@ export default function App() {
     setText(event)
   }
   const [todos, setTodos] = useState({})
-  const submitTodo = async () => {
+  const submitTodo = () => {
     if (text === '') {
       return
     }
@@ -36,8 +36,12 @@ export default function App() {
       [Date.now()]: { text, work: working, done: false },
     })
     setTodos(newTodos)
-    await saveTodos(newTodos)
+    saveTodos(newTodos)
     setText('')
+  }
+
+  const saveTodos = async (toSave) => {
+    await AsyncStorage.setItem('todos', JSON.stringify(toSave))
   }
 
   let loadedTodos
@@ -47,10 +51,6 @@ export default function App() {
       loadedTodos = JSON.parse(savedTodos)
       setTodos(loadedTodos)
     }
-  }
-
-  const saveTodos = async (toSave) => {
-    await AsyncStorage.setItem('todos', JSON.stringify(toSave))
   }
 
   useEffect(() => {
